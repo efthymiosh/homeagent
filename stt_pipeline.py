@@ -40,14 +40,15 @@ class STTPipeline:
         self.kws_threshold = kws_threshold
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        config = Decoder.default_config()
         model_path = get_model_path()
-        # Set acoustic model and dictionary paths
-        config.set_string('-hmm', os.path.join(model_path, 'en-us'))
-        config.set_string('-dict', os.path.join(model_path, 'cmudict-en-us.dict'))
-        config.set_string('-keyphrase', self.wake_word)
-        config.set_float('-kws_threshold', self.kws_threshold)
-        self._decoder = Decoder(config)
+        acoustic_path = os.path.join(model_path, 'en-us')
+        # Initialize PocketSphinx Decoder directly with keyphrase mode
+        self._decoder = Decoder(
+            hmm=acoustic_path,
+            dict=os.path.join(acoustic_path, 'cmudict-en-us.dict'),
+            keyphrase=self.wake_word,
+            kws_threshold=self.kws_threshold,
+        )
         # Load Whisper tiny model once
         self._model = whisper.load_model("tiny")
 
