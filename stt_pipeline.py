@@ -41,11 +41,10 @@ class STTPipeline:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         model_path = get_model_path()
-        acoustic_path = os.path.join(model_path, 'en-us')
         # Initialize PocketSphinx Decoder directly with keyphrase mode
         self._decoder = Decoder(
-            hmm=acoustic_path,
-            dict=os.path.join(acoustic_path, 'cmudict-en-us.dict'),
+            hmm=os.path.join(model_path, 'en-us/en-us'),
+            dict=os.path.join(model_path, 'en-us/cmudict-en-us.dict'),
             keyphrase=self.wake_word,
             kws_threshold=self.kws_threshold,
         )
