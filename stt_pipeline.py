@@ -10,7 +10,7 @@ import os
 import tempfile
 import threading
 import time
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 import whisper
 from pocketsphinx import Decoder, get_model_path
@@ -41,6 +41,9 @@ class STTPipeline:
         self._running = False
         self._thread: Optional[threading.Thread] = None
         model_path = get_model_path()
+        # Placeholders for shared audio objects (created in start())
+        self._audio: Optional[VoiceInput] = None
+        self._stream: Optional[Any] = None
         # Initialize PocketSphinx Decoder directly with keyphrase mode
         self._decoder = Decoder(
             hmm=os.path.join(model_path, 'en-us/en-us'),
@@ -52,19 +55,18 @@ class STTPipeline:
         self._model = whisper.load_model("tiny")
 
     def _detect_loop(self):
-        # Use PocketSphinx decoder for keyword spotting
-        audio = VoiceInput(rate=16000, chunk=1024)
-        # Start utterance processing
-        self._decoder.start_utt()
+        # Use the shared VoiceInput stream created in start()
+        audio_stream = self._stream
         try:
             while self._running:
-                data = audio._open_stream().read(1024)
+                data = audio_stream.read(1024)
                 if not data:
                     continue
                 # Feed raw audio to decoder
                 self._decoder.process_raw(data, False, False)
                 hyp = self._decoder.hyp()
                 if hyp is not None:
+                    
                     # Wake‑word detected
                     self._handle_wake_word()
                     # Reset decoder for next detection
@@ -73,7 +75,8 @@ class STTPipeline:
         finally:
             # Ensure utterance is ended before closing
             self._decoder.end_utt()
-            audio.close()
+            # Stream will be closed in stop()
+
 
     def _handle_wake_word(self):
         vi = VoiceInput(rate=16000)
@@ -95,6 +98,11 @@ class STTPipeline:
         if self._running:
             return
         self._running = True
+        # Create shared audio objects on the main thread
+        self._audio = VoiceInput(rate=16000, chunk=1024)
+        self._stream = self._audio._open_stream()
+        # Start utterance processing for PocketSphinx
+        self._decoder.start_utt()
         self._thread = threading.Thread(target=self._detect_loop, daemon=True)
         self._thread.start()
 
@@ -103,6 +111,14 @@ class STTPipeline:
         if self._thread:
             self._thread.join()
             self._thread = None
+        # Clean up audio resources
+        if self._stream:
+            self._stream.stop_stream()
+            self._stream.close()
+            self._stream = None
+        if self._audio:
+            self._audio.close()
+            self._audio = None
 
 # Simple demo when run directly
 if __name__ == "__main__":
