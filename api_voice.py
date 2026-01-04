@@ -16,7 +16,7 @@ import tempfile, os
 
 from stt_pipeline import STTPipeline
 
-app = FastAPI(title="HomeAgent Voice API")
+from contextlib import asynccontextmanager
 
 # Global pipeline instance
 pipeline: STTPipeline | None = None
@@ -34,15 +34,17 @@ def _init_pipeline():
         pipeline = STTPipeline(on_transcript=sync_cb)
         pipeline.start()
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     _init_pipeline()
     app.state.last_transcript = ""
+    try:
+        yield
+    finally:
+        if pipeline:
+            pipeline.stop()
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    if pipeline:
-        pipeline.stop()
+app = FastAPI(title="HomeAgent Voice API", lifespan=lifespan)
 
 @app.post("/voice")
 async def receive_voice(file: UploadFile = File(...)) -> Any:
