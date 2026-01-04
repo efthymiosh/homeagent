@@ -54,6 +54,8 @@ class STTPipeline:
     def _detect_loop(self):
         # Use PocketSphinx decoder for keyword spotting
         audio = VoiceInput(rate=16000, chunk=1024)
+        # Start utterance processing
+        self._decoder.start_utt()
         try:
             while self._running:
                 data = audio._open_stream().read(1024)
@@ -69,6 +71,8 @@ class STTPipeline:
                     self._decoder.end_utt()
                     self._decoder.start_utt()
         finally:
+            # Ensure utterance is ended before closing
+            self._decoder.end_utt()
             audio.close()
 
     def _handle_wake_word(self):
