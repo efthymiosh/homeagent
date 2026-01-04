@@ -26,14 +26,17 @@ class VoiceInput:
         self._audio = pyaudio.PyAudio()
 
     def _open_stream(self):
-        return self._audio.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=self.rate,
-            input=True,
-            input_device_index=self.device_index,
-            frames_per_buffer=self.chunk,
-        )
+        # Build arguments, omitting input_device_index if None to let PyAudio choose default
+        kwargs = {
+            "format": pyaudio.paInt16,
+            "channels": 1,
+            "rate": self.rate,
+            "input": True,
+            "frames_per_buffer": self.chunk,
+        }
+        if self.device_index is not None:
+            kwargs["input_device_index"] = self.device_index
+        return self._audio.open(**kwargs)
 
     def record(self, duration: int = 5) -> bytes:
         """Record `duration` seconds of audio and return WAV bytes.
