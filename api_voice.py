@@ -49,14 +49,6 @@ app = FastAPI(title="HomeAgent Voice API", lifespan=lifespan)
 router = CommandRouter()
 tts = VoiceOutput()
 
-# Example handler registration – you can add more elsewhere
-def lights_handler(transcript: str) -> str:
-    response = "Turning the lights on."
-    asyncio.create_task(tts.speak(response))
-    return response
-
-router.register("light", lights_handler)
-
 @app.post("/voice")
 async def receive_voice(file: UploadFile = File(...)) -> Any:
     """Receive a WAV audio file, transcribe it, route to a handler, and return the result.
@@ -70,8 +62,8 @@ async def receive_voice(file: UploadFile = File(...)) -> Any:
         tmp_path = tmp.name
     try:
         import whisper
-        model = whisper.load_model("tiny")
-        result = model.transcribe(tmp_path)
+        model = whisper.load_model("base")
+        result = model.transcribe(tmp_path, fp16=False)
         text = result.get("text", "").strip()
     finally:
         os.remove(tmp_path)

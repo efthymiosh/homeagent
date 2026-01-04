@@ -51,8 +51,8 @@ class STTPipeline:
             keyphrase=self.wake_word,
             kws_threshold=self.kws_threshold,
         )
-        # Load Whisper tiny model once
-        self._model = whisper.load_model("tiny")
+        # Load Whisper model
+        self._model = whisper.load_model("base")
 
     def _detect_loop(self):
         # Use the shared VoiceInput stream created in start()
@@ -66,7 +66,6 @@ class STTPipeline:
                 self._decoder.process_raw(data, False, False)
                 hyp = self._decoder.hyp()
                 if hyp is not None:
-                    
                     # Wake‑word detected
                     self._handle_wake_word()
                     # Reset decoder for next detection
@@ -79,6 +78,7 @@ class STTPipeline:
 
 
     def _handle_wake_word(self):
+        print("Woken!")
         vi = VoiceInput(rate=16000)
         audio_bytes = vi.record(self.record_seconds)
         vi.close()
@@ -87,7 +87,7 @@ class STTPipeline:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
         try:
-            result = self._model.transcribe(tmp_path)
+            result = self._model.transcribe(tmp_path, fp16=False)
             text = result.get("text", "").strip()
             if text:
                 self.on_transcript(text)
