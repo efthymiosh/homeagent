@@ -6,17 +6,17 @@
 * The resulting text is returned for further processing.
 """
 
+import os
+import tempfile
 import threading
 import time
 from typing import Callable, Optional
 
-import pvporcupine
-import numpy as np
 import whisper
-import tempfile
-import os
+from pocketsphinx import Decoder, get_model_path
 
 from voice_input import VoiceInput
+
 
 class STTPipeline:
     """Manage wake‑word detection and transcription.
@@ -33,38 +33,43 @@ class STTPipeline:
     def __init__(self, on_transcript: Callable[[str], None],
                  wake_word: str = "hey jarvis",
                  record_seconds: int = 5,
-                 porcupine_sensitivity: float = 0.6,
-                 porcupine_access_key: str = "YOUR_ACCESS_KEY"):
+                 kws_threshold: float = 1e-20):
         self.on_transcript = on_transcript
         self.wake_word = wake_word
         self.record_seconds = record_seconds
-        self.porcupine_sensitivity = porcupine_sensitivity
-        self.porcupine_access_key = porcupine_access_key
+        self.kws_threshold = kws_threshold
         self._running = False
         self._thread: Optional[threading.Thread] = None
+        config = Decoder.default_config()
+        model_path = get_model_path()
+        # Set acoustic model and dictionary paths
+        config.set_string('-hmm', os.path.join(model_path, 'en-us'))
+        config.set_string('-dict', os.path.join(model_path, 'cmudict-en-us.dict'))
+        config.set_string('-keyphrase', self.wake_word)
+        config.set_float('-kws_threshold', self.kws_threshold)
+        self._decoder = Decoder(config)
         # Load Whisper tiny model once
         self._model = whisper.load_model("tiny")
 
     def _detect_loop(self):
-        # Initialize Porcupine with the custom wake‑word (built‑in keyword list)
-        # Porcupine provides built‑in keywords; we map common names.
-        keyword_paths = pvporcupine.KEYWORD_PATHS
-        # Find a built‑in keyword that matches our phrase, fallback to "hey google"
-        keyword = "hey jarvis" if "hey jarvis" in keyword_paths else "hey google"
-        porcupine = pvporcupine.create(access_key=self.porcupine_access_key, keywords=[keyword], sensitivities=[self.porcupine_sensitivity])
-        audio = VoiceInput(rate=porcupine.sample_rate, chunk=porcupine.frame_length)
+        # Use PocketSphinx decoder for keyword spotting
+        audio = VoiceInput(rate=16000, chunk=1024)
         try:
             while self._running:
-                pcm = audio._open_stream().read(porcupine.frame_length)
-                # Convert bytes to int16 numpy array and then to list of ints for Porcupine
-                pcm_int16 = np.frombuffer(pcm, dtype=np.int16)
-                result = porcupine.process(pcm_int16.tolist())
-                if result >= 0:
+                data = audio._open_stream().read(1024)
+                if not data:
+                    continue
+                # Feed raw audio to decoder
+                self._decoder.process_raw(data, False, False)
+                hyp = self._decoder.hyp()
+                if hyp is not None:
                     # Wake‑word detected
                     self._handle_wake_word()
+                    # Reset decoder for next detection
+                    self._decoder.end_utt()
+                    self._decoder.start_utt()
         finally:
             audio.close()
-            porcupine.delete()
 
     def _handle_wake_word(self):
         vi = VoiceInput(rate=16000)

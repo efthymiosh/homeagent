@@ -663,7 +663,7 @@ dependencies = [
     { name = "coqui-tts" },
     { name = "fastapi" },
     { name = "openai-whisper" },
-    { name = "pvporcupine" },
+    { name = "pocketsphinx" },
     { name = "pyaudio" },
     { name = "python-multipart" },
     { name = "sounddevice" },
@@ -681,7 +681,7 @@ requires-dist = [
     { name = "coqui-tts", specifier = ">=0.27.3" },
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "openai-whisper", specifier = ">=20250625" },
-    { name = "pvporcupine", specifier = ">=4.0.1" },
+    { name = "pocketsphinx", specifier = ">=5.0" },
     { name = "pyaudio", specifier = ">=0.2.14" },
     { name = "python-multipart", specifier = ">=0.0.21" },
     { name = "sounddevice", specifier = ">=0.5.3" },
@@ -1355,6 +1355,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pocketsphinx"
+version = "5.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sounddevice" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ce/89/23e37c19bf30f0570088b7c4b548a666ca94331a6aa5a59b34402becc2d5/pocketsphinx-5.0.4.tar.gz", hash = "sha256:17d2971e998490def9554b6ba41886708422af5b4ae888723b1b077aab0fe8d4", size = 34135858, upload-time = "2025-01-10T17:02:09.116Z" }
+
+[[package]]
 name = "pooch"
 version = "1.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1442,15 +1451,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1c/15/dd6fd869753ce82ff64dcbc18356093471a5a5adf4f77ed1f805d473d859/psutil-7.2.1-cp36-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:99a4cd17a5fdd1f3d014396502daa70b5ec21bf4ffe38393e152f8e449757d67", size = 147402, upload-time = "2025-12-29T08:26:39.21Z" },
     { url = "https://files.pythonhosted.org/packages/34/68/d9317542e3f2b180c4306e3f45d3c922d7e86d8ce39f941bb9e2e9d8599e/psutil-7.2.1-cp37-abi3-win_amd64.whl", hash = "sha256:b1b0671619343aa71c20ff9767eced0483e4fc9e1f489d50923738caf6a03c17", size = 136938, upload-time = "2025-12-29T08:26:41.036Z" },
     { url = "https://files.pythonhosted.org/packages/3e/73/2ce007f4198c80fcf2cb24c169884f833fe93fbc03d55d302627b094ee91/psutil-7.2.1-cp37-abi3-win_arm64.whl", hash = "sha256:0d67c1822c355aa6f7314d92018fb4268a76668a536f133599b91edd48759442", size = 133836, upload-time = "2025-12-29T08:26:43.086Z" },
-]
-
-[[package]]
-name = "pvporcupine"
-version = "4.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8e/5f/870f6cab23ca8dec966f90fbfacf603ec3dc448c3a4040edede91bac5909/pvporcupine-4.0.1.tar.gz", hash = "sha256:987d6aa9590c09e2fc3cd8513eb85c96402d2d6731d5691e8e3bcd44196fd852", size = 3628063, upload-time = "2025-12-18T22:01:15.542Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6c/60/744e28f998ce36c4d3ea685375ca9c3442b89484731f909505495eefa1a0/pvporcupine-4.0.1-py3-none-any.whl", hash = "sha256:34cac4d015b0d47d71c74e6c60a1855d41e1bc773488ef91bceb2efac2b9da65", size = 3644809, upload-time = "2025-12-18T22:01:13.414Z" },
 ]
 
 [[package]]
