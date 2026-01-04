@@ -4,19 +4,18 @@ Provides a FastAPI endpoint that accepts raw WAV bytes (or multipart file)
 and forwards them to the speech‑to‑text pipeline.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
-from typing import Any
-
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import JSONResponse
-from typing import Any
 import asyncio
-import tempfile, os
-
-from stt_pipeline import STTPipeline
-
+import os
+import tempfile
 from contextlib import asynccontextmanager
+from typing import Any
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import JSONResponse
+
+from router import CommandRouter
+from voice_output import VoiceOutput
+from stt_pipeline import STTPipeline
 
 # Global pipeline instance
 pipeline: STTPipeline | None = None
@@ -46,14 +45,26 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="HomeAgent Voice API", lifespan=lifespan)
 
+# Initialise router and TTS (singletons)
+router = CommandRouter()
+tts = VoiceOutput()
+
+# Example handler registration – you can add more elsewhere
+def lights_handler(transcript: str) -> str:
+    response = "Turning the lights on."
+    asyncio.create_task(tts.speak(response))
+    return response
+
+router.register("light", lights_handler)
+
 @app.post("/voice")
 async def receive_voice(file: UploadFile = File(...)) -> Any:
-    """Receive a WAV audio file from a network device and transcribe it.
+    """Receive a WAV audio file, transcribe it, route to a handler, and return the result.
     """
     if file.content_type not in ("audio/wav", "audio/x-wav"):
         raise HTTPException(status_code=400, detail="Only WAV audio is supported")
     content = await file.read()
-    # Directly transcribe using Whisper tiny (quick path)
+    # Direct transcription using Whisper tiny (fast)
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
         tmp.write(content)
         tmp_path = tmp.name
@@ -64,9 +75,11 @@ async def receive_voice(file: UploadFile = File(...)) -> Any:
         text = result.get("text", "").strip()
     finally:
         os.remove(tmp_path)
-    # Store latest transcript
+    # Store raw transcript
     app.state.last_transcript = text
-    return JSONResponse(content={"transcript": text})
+    # Route to a handler (may return a response string)
+    response = router.route(text)
+    return JSONResponse(content={"transcript": text, "response": response or ""})
 
 @app.get("/last_transcript")
 async def get_last_transcript():
