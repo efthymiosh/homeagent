@@ -1,3 +1,6 @@
+from langchain.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_core.utils import convert_to_secret_str
 from functools import partial
 import os
 import httpx
@@ -5,6 +8,9 @@ from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
 from kokoro import KPipeline
 import sounddevice as sd
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain.agents import create_agent
 
 # Load .env if present (optional)
 load_dotenv()
@@ -30,21 +36,34 @@ def speak_error(msg: str):
     speak_text(msg)
 
 
+# Initialise LLM with endpoint and model via OpenAI compatible API
+llm = ChatOpenAI(
+    model_name=OPENAI_MODEL,
+    openai_api_base=OPENAI_ENDPOINT,
+    openai_api_key=convert_to_secret_str(""),
+    temperature=0.7,
+    streaming=False,
+    max_tokens=None,
+)
+
+agent = create_agent(
+    llm,
+    tools=[],
+    checkpointer=InMemorySaver(),  
+)
+
+config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
 def ask_openai(user_input: str) -> str:
-    """Send user_input to the OpenAI‑compatible endpoint and return the response text."""
-    url = f"{OPENAI_ENDPOINT.rstrip('/')}/chat/completions"
-    payload = {
-        "model": OPENAI_MODEL,
-        "messages": [{"role": "user", "content": user_input}],
-        "temperature": 0.7,
-    }
-    try:
-        resp = httpx.post(url, json=payload, timeout=30.0)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"]
-    except Exception as e:
-        raise RuntimeError(f"OpenAI request failed: {e}")
+    """Send user_input to the LLM with memory and return response text."""
+
+    response = agent.invoke(
+        {"messages": [HumanMessage(user_input)]},
+        config,
+    )
+    print(f"{response["messages"][-2].content}")
+    print(f"AI: {response["messages"][-1].content}")
+    return str(response["messages"][-1].content)
 
 
 def process_text(recorder: AudioToTextRecorder, text: str):
