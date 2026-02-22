@@ -12,7 +12,7 @@ import threading
 import time
 from typing import Callable, Optional, Any
 
-import whisper
+import whisperx
 from pocketsphinx import Decoder, get_model_path
 
 from voice_input import VoiceInput
@@ -52,14 +52,14 @@ class STTPipeline:
             kws_threshold=self.kws_threshold,
         )
         # Load Whisper model
-        self._model = whisper.load_model("base")
+        self._model = whisperx.load_model("tiny.en", "cpu", compute_type="int8")
 
     def _detect_loop(self):
         # Use the shared VoiceInput stream created in start()
         audio_stream = self._stream
         try:
             while self._running:
-                data = audio_stream.read(1024)
+                data = audio_stream.read(1024)  # ty:ignore[unresolved-attribute]
                 if not data:
                     continue
                 # Feed raw audio to decoder

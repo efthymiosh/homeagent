@@ -61,8 +61,8 @@ async def receive_voice(file: UploadFile = File(...)) -> Any:
         tmp.write(content)
         tmp_path = tmp.name
     try:
-        import whisper
-        model = whisper.load_model("base")
+        import whisperx
+        model = whisperx.load_model("base")
         result = model.transcribe(tmp_path, fp16=False)
         text = result.get("text", "").strip()
     finally:
