@@ -7,7 +7,6 @@ from functools import partial
 import os
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
-from misaki import en, espeak
 import numpy as np
 from kokoro_onnx import Kokoro
 from kokoro_onnx.tokenizer import Tokenizer
@@ -15,7 +14,7 @@ import sounddevice as sd
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents import create_agent
-import re
+import time
 
 # Load .env if present (optional)
 load_dotenv()
@@ -48,15 +47,16 @@ config: RunnableConfig = {"configurable": {"thread_id": "1"}}
 def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
 
-    phonemes = tokenizer.phonemize(text)
+    for chunk in nltk.sent_tokenize(text):
+        print(f"AI: {chunk}")
+        phonemes = tokenizer.phonemize(chunk)
 
-    first_voice = kokoro.get_voice_style("af_heart")
-    second_voice = kokoro.get_voice_style("af_bella")
-    voice = np.add(first_voice * (50 / 100), second_voice * (50 / 100))
-    samples, sample_rate = kokoro.create(
-        phonemes, voice=voice, speed=1.0, is_phonemes=True
-    )
-    sd.play(samples, sample_rate)
+        voice = kokoro.get_voice_style("af_heart")
+        samples, sample_rate = kokoro.create(
+            phonemes, voice=voice, speed=1.0, is_phonemes=True
+        )
+        sd.wait()
+        sd.play(samples, sample_rate)
     sd.wait()
 
 
@@ -76,7 +76,6 @@ def process_text(recorder: AudioToTextRecorder, text: str):
 
         print(f"USER: {text}")
         for chunk in ask_openai(text):
-            print(f"AI: {chunk}")
             speak_text(chunk)
 
         recorder.set_microphone(True)
@@ -96,6 +95,7 @@ if __name__ == "__main__":
         no_log_file=True,
         spinner=False,
     )
+    print("Listening")
     while True:
         try:
             recorder.text(partial(process_text, recorder))
