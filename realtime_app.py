@@ -7,14 +7,14 @@ from functools import partial
 import os
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
-import numpy as np
 from kokoro_onnx import Kokoro
 from kokoro_onnx.tokenizer import Tokenizer
 import sounddevice as sd
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents import create_agent
-import time
+from langchain.tools import tool
+import subprocess
 
 # Load .env if present (optional)
 load_dotenv()
@@ -36,9 +36,23 @@ llm = ChatOpenAI(
     streaming=True,
     max_tokens=None,
 )
+
+@tool
+def run_shell(script: str) -> subprocess.CompletedProcess:
+    """Invoke the shell and run a UNIX script.
+
+    Args:
+        script: The shell script to run
+    """
+    return subprocess.run(script)
+
+with open("./resources/system_prompt.md", "r", encoding="utf-8") as f:
+    system_prompt = f.read()
+
 agent = create_agent(
     llm,
-    tools=[],
+    tools=[run_shell],
+    system_prompt=system_prompt,
     checkpointer=InMemorySaver(),
 )
 config: RunnableConfig = {"configurable": {"thread_id": "1"}}
