@@ -1,3 +1,4 @@
+import nltk
 from typing import Generator
 from langchain.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -6,11 +7,15 @@ from functools import partial
 import os
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
-from kokoro import KPipeline
+from misaki import en, espeak
+import numpy as np
+from kokoro_onnx import Kokoro
+from kokoro_onnx.tokenizer import Tokenizer
 import sounddevice as sd
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents import create_agent
+import re
 
 # Load .env if present (optional)
 load_dotenv()
@@ -18,8 +23,12 @@ load_dotenv()
 # Configuration from environment
 OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT", "https://ai.efhd.dev/v1")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-oss-120b")
+KOKORO_ONNX_PATH = os.getenv("KOKORO_ONNX_PATH", "./resources/kokoro-v1.0.onnx")
+KOKORO_VOICES_PATH = os.getenv("KOKORO_VOICES_PATH", "./resources/voices-v1.0.bin")
 
-tts_pipeline = KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M", trf=False)
+tokenizer = Tokenizer()
+kokoro = Kokoro(KOKORO_ONNX_PATH, KOKORO_VOICES_PATH)
+
 llm = ChatOpenAI(
     model_name=OPENAI_MODEL,
     openai_api_base=OPENAI_ENDPOINT,
@@ -38,10 +47,17 @@ config: RunnableConfig = {"configurable": {"thread_id": "1"}}
 
 def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
-    generator = tts_pipeline(text, voice="af_heart,af_bella")
-    for _, _, audio in generator:
-        sd.play(audio, 24000)
-        sd.wait()
+
+    phonemes = tokenizer.phonemize(text)
+
+    first_voice = kokoro.get_voice_style("af_heart")
+    second_voice = kokoro.get_voice_style("af_bella")
+    voice = np.add(first_voice * (50 / 100), second_voice * (50 / 100))
+    samples, sample_rate = kokoro.create(
+        phonemes, voice=voice, speed=1.0, is_phonemes=True
+    )
+    sd.play(samples, sample_rate)
+    sd.wait()
 
 
 def ask_openai(user_input: str) -> Generator[str, None, None]:

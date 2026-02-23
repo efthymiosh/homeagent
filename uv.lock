@@ -1267,10 +1267,12 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "ipython" },
-    { name = "kokoro" },
+    { name = "kokoro-onnx" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-openai" },
+    { name = "misaki-fork", extra = ["en"] },
+    { name = "nltk" },
     { name = "openai" },
     { name = "pip" },
     { name = "pocketsphinx" },
@@ -1295,10 +1297,12 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipython", specifier = ">=9.10.0" },
-    { name = "kokoro", specifier = ">=0.9.4" },
+    { name = "kokoro-onnx", specifier = ">=0.5.0" },
     { name = "langchain", specifier = ">=1.2.10" },
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-openai", specifier = ">=1.1.10" },
+    { name = "misaki-fork", extras = ["en"], specifier = ">=0.9.6" },
+    { name = "nltk", specifier = ">=3.9.2" },
     { name = "openai", specifier = ">=2.21.0" },
     { name = "pip", specifier = ">=26.0.1" },
     { name = "pocketsphinx", specifier = ">=5.0" },
@@ -1698,20 +1702,18 @@ wheels = [
 ]
 
 [[package]]
-name = "kokoro"
-version = "0.9.4"
+name = "kokoro-onnx"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "huggingface-hub" },
-    { name = "loguru" },
-    { name = "misaki", extra = ["en"] },
+    { name = "espeakng-loader" },
     { name = "numpy" },
-    { name = "torch" },
-    { name = "transformers" },
+    { name = "onnxruntime" },
+    { name = "phonemizer-fork" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/48/88b8cdf28b068d070195c2817175549dee48e7682e3ab8994bee5f69217e/kokoro-0.9.4.tar.gz", hash = "sha256:fbf633262797f8cf46fdac3315cf9cade67dc8b762c0feccf334892772fb9ac4", size = 26215928, upload-time = "2025-04-05T22:01:35.294Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/18/277bd18aeeceaf5c46a51bb50c1cbdccdad8cab7fd1d58f0173bbeeec708/kokoro_onnx-0.5.0.tar.gz", hash = "sha256:5beb15f085e2828ed8d493f792c079af857103ab2dceaa1e112b1760587ac96a", size = 84570, upload-time = "2026-01-30T03:05:45.6Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/cc/75f41633c75224ba820a4533163bc8b070b6bf25416014074c63284c2d4e/kokoro-0.9.4-py3-none-any.whl", hash = "sha256:a129dc6364a286bd6a92c396e9862459d3d3e45f2c15596ed5a94dcee5789efd", size = 32592, upload-time = "2025-04-05T22:01:23.018Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/55/0bfcb4aa50033c89e5ac132af3d07fac0543824ce6eaefd4d1bfdcc3795b/kokoro_onnx-0.5.0-py3-none-any.whl", hash = "sha256:4e1c38a296db5dbc1f722f69f5e3c13f2e2877b3e5b145287f56ec057013e357", size = 17448, upload-time = "2026-01-30T03:05:46.931Z" },
 ]
 
 [[package]]
@@ -2004,19 +2006,6 @@ wheels = [
 ]
 
 [[package]]
-name = "loguru"
-version = "0.7.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
-]
-
-[[package]]
 name = "mako"
 version = "1.3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -2200,16 +2189,17 @@ wheels = [
 ]
 
 [[package]]
-name = "misaki"
-version = "0.9.4"
+name = "misaki-fork"
+version = "0.9.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "addict" },
+    { name = "pip" },
     { name = "regex" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/c7/fb01370a76585b46595a01b52f18e65c8ba6d7a313a05e5d9fff0a8e1c69/misaki-0.9.4.tar.gz", hash = "sha256:3960fa3e6de179a90ee8e628446a4a4f6b8c730b6e3410999cf396189f4d9c40", size = 3756765, upload-time = "2025-04-05T21:57:14.186Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/60/13f61cacba1ce9b29d8f285630b095c605cf99509b055665117ff5680be1/misaki_fork-0.9.6.tar.gz", hash = "sha256:dd75b77bdccb4c01c97274ed490d9e2ada9e69c3ec84ecea2b6d23302082bce0", size = 3755175, upload-time = "2026-01-30T02:48:35.994Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/ec/0ee4110ddb54278b8f21c40a140370ae8f687036c4edf578316602697c56/misaki-0.9.4-py3-none-any.whl", hash = "sha256:90e2eeb169786c014c429e5058d2ea6bcd02d651f2a24450ba6c9ffc0f8da15a", size = 3617774, upload-time = "2025-04-05T21:57:10.678Z" },
+    { url = "https://files.pythonhosted.org/packages/31/72/9d69211d0689400459d83c0853ab8bb77282a17967536de58b926c9cd613/misaki_fork-0.9.6-py3-none-any.whl", hash = "sha256:e6654af901ee6ab2b625587b7ad6fc81460bc7576bc8455a0bcb390808057b88", size = 3765635, upload-time = "2026-01-30T02:48:32.345Z" },
 ]
 
 [package.optional-dependencies]
@@ -2219,6 +2209,8 @@ en = [
     { name = "phonemizer-fork" },
     { name = "spacy" },
     { name = "spacy-curated-transformers" },
+    { name = "torch" },
+    { name = "transformers" },
 ]
 
 [[package]]
@@ -4288,14 +4280,14 @@ wheels = [
 
 [[package]]
 name = "smart-open"
-version = "7.5.0"
+version = "7.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/67/9a/0a7acb748b86e2922982366d780ca4b16c33f7246fa5860d26005c97e4f3/smart_open-7.5.0.tar.gz", hash = "sha256:f394b143851d8091011832ac8113ea4aba6b92e6c35f6e677ddaaccb169d7cb9", size = 53920, upload-time = "2025-11-08T21:38:40.698Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/be/a66598b305763861a9ab15ff0f2fbc44e47b1ce7a776797337a4eef37c66/smart_open-7.5.1.tar.gz", hash = "sha256:3f08e16827c4733699e6b2cc40328a3568f900cb12ad9a3ad233ba6c872d9fe7", size = 54034, upload-time = "2026-02-23T11:01:28.979Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/95/bc978be7ea0babf2fb48a414b6afaad414c6a9e8b1eafc5b8a53c030381a/smart_open-7.5.0-py3-none-any.whl", hash = "sha256:87e695c5148bbb988f15cec00971602765874163be85acb1c9fb8abc012e6599", size = 63940, upload-time = "2025-11-08T21:38:39.024Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/ea/dcdecd68acebb49d3fd560473a43499b1635076f7f1ae8641c060fe7ce74/smart_open-7.5.1-py3-none-any.whl", hash = "sha256:3e07cbbd9c8a908bcb8e25d48becf1a5cbb4886fa975e9f34c672ed171df2318", size = 64108, upload-time = "2026-02-23T11:01:27.429Z" },
 ]
 
 [[package]]
@@ -5257,15 +5249,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/71/b07cc44cc58766191d69d80cf7b8078236e3af7ac2727807a7de7a35aa11/whisperx-3.8.1.tar.gz", hash = "sha256:8aa85c4c5394237950483f3c17e930ff440de1f320f3ffa4608899d6843d9a29", size = 16489226, upload-time = "2026-02-14T14:01:50.011Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/83/d7e8c1f26b6457530bcecab1808a10bf6a7d3f4710acff245c40bc468817/whisperx-3.8.1-py3-none-any.whl", hash = "sha256:92cc441ea8550f236f81dd5e5b54b066f085a01b25c9016c553872381dee763a", size = 16486564, upload-time = "2026-02-14T14:01:47.304Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
 
 [[package]]
