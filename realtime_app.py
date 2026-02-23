@@ -1,3 +1,4 @@
+from typing import Generator
 from langchain.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.utils import convert_to_secret_str
@@ -19,12 +20,12 @@ OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT", "https://ai.efhd.dev/v1")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-oss-120b")
 
 # Initialise TTS pipeline once
-tts_pipeline = KPipeline(lang_code="a")
+tts_pipeline = KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M", trf=False)
 
 
 def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
-    generator = tts_pipeline(text, voice="af_heart")
+    generator = tts_pipeline(text, voice="af_heart,af_bella")
     for _, _, audio in generator:
         sd.play(audio, 24000)
         sd.wait()
@@ -53,16 +54,15 @@ agent = create_agent(
 
 config: RunnableConfig = {"configurable": {"thread_id": "1"}}
 
-def ask_openai(user_input: str) -> str:
+def ask_openai(user_input: str) -> Generator[str, None, None]:
     """Send user_input to the LLM with memory and return response text."""
 
-    response = agent.invoke(
+    for chunk in agent.stream(
         {"messages": [HumanMessage(user_input)]},
         config,
-    )
-    print(f"{response["messages"][-2].content}")
-    print(f"AI: {response["messages"][-1].content}")
-    return str(response["messages"][-1].content)
+        stream_mode="updates"
+    ):
+        yield str(chunk["model"]["messages"][-1].content)
 
 
 def process_text(recorder: AudioToTextRecorder, text: str):
@@ -72,8 +72,10 @@ def process_text(recorder: AudioToTextRecorder, text: str):
     try:
         recorder.set_microphone(False)
 
-        reply = ask_openai(text)
-        speak_text(reply)
+        print(f"USER: {text}")
+        for chunk in ask_openai(text):
+            print(f"AI: {chunk}")
+            speak_text(chunk)
 
         recorder.set_microphone(True)
     except Exception as e:
@@ -91,6 +93,7 @@ if __name__ == "__main__":
         realtime_model_type="tiny.en",
         model="tiny.en",
         no_log_file=True,
+        spinner=False,
     ) as recorder:
         while True:
             try:
