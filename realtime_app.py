@@ -3,7 +3,6 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.utils import convert_to_secret_str
 from functools import partial
 import os
-import httpx
 from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
 from kokoro import KPipeline
@@ -42,7 +41,7 @@ llm = ChatOpenAI(
     openai_api_base=OPENAI_ENDPOINT,
     openai_api_key=convert_to_secret_str(""),
     temperature=0.7,
-    streaming=False,
+    streaming=True,
     max_tokens=None,
 )
 
