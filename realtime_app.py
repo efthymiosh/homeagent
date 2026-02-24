@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from RealtimeSTT import AudioToTextRecorder
 from kokoro_onnx import Kokoro
 from kokoro_onnx.tokenizer import Tokenizer
+import phonemizer
 import sounddevice as sd
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
@@ -61,13 +62,28 @@ agent = create_agent(
 config: RunnableConfig = {"configurable": {"thread_id": "1"}}
 
 
+def phonemize(tokenizer: Tokenizer, text, lang="en-us", norm=True) -> str:
+    """
+    lang can be 'en-us' or 'en-gb'
+    """
+    if norm:
+        text = tokenizer.normalize_text(text)
+
+    phonemes = phonemizer.phonemize(
+        text, lang, preserve_punctuation=True, with_stress=True, words_mismatch="ignore"
+    )
+    phonemes = "".join(filter(lambda p: p in tokenizer.vocab, phonemes))
+    return phonemes.strip()
+
+
 def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
 
     voice = kokoro.get_voice_style("af_heart")
     for chunk in nltk.sent_tokenize(text):
         print(f"AI: {chunk}")
-        samples, sample_rate = kokoro.create(chunk, voice=voice, speed=1.0)
+        phonemes = phonemize(tokenizer, chunk)
+        samples, sample_rate = kokoro.create(phonemes, voice=voice, speed=1.0, is_phonemes=True)
         sd.wait()
         sd.play(samples, sample_rate)
     sd.wait()
