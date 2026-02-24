@@ -17,6 +17,11 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 import subprocess
 
+import warnings
+import logging
+warnings.filterwarnings("ignore", module="phonemizer")
+logging.getLogger("phonemizer").setLevel(logging.CRITICAL)
+
 # Load .env if present (optional)
 load_dotenv()
 
@@ -80,6 +85,8 @@ def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
 
     voice = kokoro.get_voice_style("af_heart")
+    # gpt-oss is very trigger happy with asterisks, which are not stripped by the voice pipeline.
+    text = text.replace("*", "")
     for chunk in nltk.sent_tokenize(text):
         print(f"AI: {chunk}")
         phonemes = phonemize(tokenizer, chunk)
@@ -126,7 +133,7 @@ if __name__ == "__main__":
         no_log_file=True,
         spinner=False,
     )
-    print("Listening")
+    print("Listening...\n")
     while True:
         try:
             recorder.text(partial(process_text, recorder))
