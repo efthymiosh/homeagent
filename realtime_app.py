@@ -37,14 +37,17 @@ llm = ChatOpenAI(
     max_tokens=None,
 )
 
+
 @tool
-def run_shell(script: str) -> subprocess.CompletedProcess:
+def run_shell(script: str) -> str:
     """Invoke the shell and run a UNIX script.
 
     Args:
         script: The shell script to run
     """
-    return subprocess.run(script)
+    print(f"AI [invoked tool `run_shell` with: {script}]")
+    return str(subprocess.run(["bash", "-c", script], capture_output=True, text=True).stdout)
+
 
 with open("./resources/system_prompt.md", "r", encoding="utf-8") as f:
     system_prompt = f.read()
@@ -61,14 +64,10 @@ config: RunnableConfig = {"configurable": {"thread_id": "1"}}
 def speak_text(text: str):
     """Convert text to speech and play it via sounddevice."""
 
+    voice = kokoro.get_voice_style("af_heart")
     for chunk in nltk.sent_tokenize(text):
         print(f"AI: {chunk}")
-        phonemes = tokenizer.phonemize(chunk)
-
-        voice = kokoro.get_voice_style("af_heart")
-        samples, sample_rate = kokoro.create(
-            phonemes, voice=voice, speed=1.0, is_phonemes=True
-        )
+        samples, sample_rate = kokoro.create(chunk, voice=voice, speed=1.0)
         sd.wait()
         sd.play(samples, sample_rate)
     sd.wait()
@@ -78,7 +77,9 @@ def ask_openai(user_input: str) -> Generator[str, None, None]:
     """Send user_input to the LLM with memory and return response text."""
 
     for chunk in agent.stream({"messages": [HumanMessage(user_input)]}, config, stream_mode="updates"):
-        yield str(chunk["model"]["messages"][-1].content)
+        model = chunk.get("model")
+        if model is not None:
+            yield str(chunk["model"]["messages"][-1].content)
 
 
 def process_text(recorder: AudioToTextRecorder, text: str):
@@ -92,10 +93,10 @@ def process_text(recorder: AudioToTextRecorder, text: str):
         for chunk in ask_openai(text):
             speak_text(chunk)
 
-        recorder.set_microphone(True)
     except Exception as e:
         # Any error: speak a short notice and continue
         speak_text(f"Errored while processing text: {e}")
+    recorder.set_microphone(True)
 
 
 if __name__ == "__main__":
