@@ -16,6 +16,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents import create_agent
 from langchain.tools import tool
 import subprocess
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import warnings
 import logging
@@ -30,6 +31,16 @@ OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT", "https://ai.efhd.dev/v1")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-oss-120b")
 KOKORO_ONNX_PATH = os.getenv("KOKORO_ONNX_PATH", "./resources/kokoro-v1.0.onnx")
 KOKORO_VOICES_PATH = os.getenv("KOKORO_VOICES_PATH", "./resources/voices-v1.0.bin")
+SYSTEM_PROMPT_DIR = os.getenv("SYSTEM_PROMPT_DIR", "./resources/")
+USER_NAME = os.getenv("USER_NAME", "Efthymios")
+
+j2env = Environment(
+    loader=FileSystemLoader(SYSTEM_PROMPT_DIR),
+    autoescape=select_autoescape()
+)
+
+system_prompt_template = j2env.get_template("system_prompt.md")
+system_prompt = system_prompt_template.render(user_name = USER_NAME)
 
 tokenizer = Tokenizer()
 kokoro = Kokoro(KOKORO_ONNX_PATH, KOKORO_VOICES_PATH)
@@ -54,9 +65,6 @@ def run_shell(script: str) -> str:
     print(f"AI [invoked tool `run_shell` with: {script}]")
     return str(subprocess.run(["bash", "-c", script], capture_output=True, text=True).stdout)
 
-
-with open("./resources/system_prompt.md", "r", encoding="utf-8") as f:
-    system_prompt = f.read()
 
 agent = create_agent(
     llm,
