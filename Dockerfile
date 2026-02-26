@@ -30,13 +30,18 @@ RUN curl -L -o /app/voices-v1.0.bin \
 COPY resources/system_prompt.md /app/system_prompt.md
 
 RUN uv run python - <<EOF
+
 import nltk
 nltk.download('punkt_tab')
+
+from faster_whisper import WhisperModel
+WhisperModel("tiny.en", device="cpu", compute_type="int8")
+
 EOF
 
 ENV OPENAI_ENDPOINT="https://ai.efhd.dev/v1"
 ENV OPENAI_MODEL="gpt-oss-120b"
 ENV KOKORO_ONNX_PATH="/app/kokoro-v1.0.onnx"
-ENV KOKORO_VOICES_PATH="/app/resources/voices-v1.0.bin"
+ENV KOKORO_VOICES_PATH="/app/voices-v1.0.bin"
 
 CMD ["uv", "run", "realtime_app.py"]
